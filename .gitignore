@@ -1,4 +1,11 @@
 # Logs
+
+# Backend — SQLite DB & env secrets
+backend/db/*.sqlite
+backend/db/*.sqlite-shm
+backend/db/*.sqlite-wal
+backend/.env
+backend/node_modules
 logs
 *.log
 npm-debug.log*
