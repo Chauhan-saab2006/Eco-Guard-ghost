@@ -201,6 +201,7 @@ export const AppProvider = ({ children }) => {
     currentCalculatedRisk: computedRisk,
   };
 
+  // Refresh All Data (Manual or Live Sim tick)
   // Refresh All Data (Manual or Live Sim fallback tick)
   const refreshAllData = useCallback(
     (isAuto = false) => {
@@ -208,6 +209,7 @@ export const AppProvider = ({ children }) => {
       const timeStr = now.toLocaleTimeString();
       setLastRefreshedAt(timeStr);
 
+      // Slightly perturb Node 1 & Node 2 sensors for realistic telemetry simulation
       // If backend API URL is configured, trigger re-fetch of current nodes & weather
       if (API_URL) {
         fetch(`${API_URL}/api/nodes`)
@@ -310,6 +312,7 @@ export const AppProvider = ({ children }) => {
     [thresholds, addToast]
   );
 
+  // Live Simulation interval loop
   // Live Simulation interval loop (fallback or sync ticker)
   useEffect(() => {
     if (!isLiveSimulating) return;
