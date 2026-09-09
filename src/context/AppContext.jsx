@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { io } from "socket.io-client";
 import { initialNodes } from "../data/mockNodes";
 import { initialApiData } from "../data/mockApiData";
 import { initialAlerts } from "../data/mockAlerts";
@@ -6,6 +7,9 @@ import { initialHazards } from "../data/mockHazards";
 import { initialReports } from "../data/mockReports";
 import { initialMLState } from "../data/mockPredictions";
 import { calculateRisk } from "../utils/riskCalculator";
+
+const RAW_API_URL = import.meta.env.VITE_API_URL || "";
+export const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/$/, "") : "";
 
 const AppContext = createContext();
 
@@ -66,6 +70,127 @@ export const AppProvider = ({ children }) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   };
 
+  // Initial Data Fetching from Backend API (if API_URL configured)
+  useEffect(() => {
+    if (!API_URL) return;
+
+    // Fetch Nodes
+    fetch(`${API_URL}/api/nodes`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+          setNodes(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch /api/nodes:", err.message));
+
+    // Fetch Alerts
+    fetch(`${API_URL}/api/alerts`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setAlerts(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch /api/alerts:", err.message));
+
+    // Fetch Hazards
+    fetch(`${API_URL}/api/hazards`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setHazards(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch /api/hazards:", err.message));
+
+    // Fetch Reports
+    fetch(`${API_URL}/api/reports`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setReports(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch /api/reports:", err.message));
+
+    // Fetch Weather
+    fetch(`${API_URL}/api/weather/current`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setApiData(json.data);
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch /api/weather/current:", err.message));
+
+    // Fetch Thresholds
+    fetch(`${API_URL}/api/settings/thresholds`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success && json.data) {
+          setThresholds((prev) => ({ ...prev, ...json.data }));
+        }
+      })
+      .catch((err) => console.warn("Failed to fetch /api/settings/thresholds:", err.message));
+  }, []);
+
+  // Real-time Socket.IO Connection
+  useEffect(() => {
+    if (!API_URL) return;
+
+    const socket = io(API_URL, {
+      transports: ["websocket", "polling"],
+      reconnectionAttempts: 5,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to EvoGuard Socket.IO server:", API_URL);
+    });
+
+    socket.on("node:update", (payload) => {
+      if (payload && Array.isArray(payload.nodes)) {
+        setNodes(payload.nodes);
+        setLastRefreshedAt(new Date().toLocaleTimeString());
+      }
+    });
+
+    socket.on("weather:update", (payload) => {
+      if (payload && payload.weather) {
+        setApiData((prev) => ({
+          ...prev,
+          lastUpdate: "Just now",
+          sensors: {
+            ...prev.sensors,
+            temperature: {
+              ...prev.sensors.temperature,
+              value: payload.weather.temperature ?? prev.sensors.temperature.value,
+            },
+            aqi: {
+              ...prev.sensors.aqi,
+              value: payload.weather.aqi ?? prev.sensors.aqi.value,
+            },
+            rainfall: {
+              ...prev.sensors.rainfall,
+              value: payload.weather.rainfall ?? prev.sensors.rainfall.value,
+            },
+          },
+        }));
+      }
+    });
+
+    socket.on("alert:new", (payload) => {
+      if (payload && payload.alert) {
+        setAlerts((prev) => [payload.alert, ...prev]);
+        addToast("Critical Alert", payload.alert.title, "warning");
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [addToast]);
+
   // Compute live ML prediction state based on active nodes, api data, & thresholds
   const computedRisk = calculateRisk(nodes, apiData, thresholds);
 
@@ -76,14 +201,30 @@ export const AppProvider = ({ children }) => {
     currentCalculatedRisk: computedRisk,
   };
 
-  // Refresh All Data (Manual or Live Sim tick)
+  // Refresh All Data (Manual or Live Sim fallback tick)
   const refreshAllData = useCallback(
     (isAuto = false) => {
       const now = new Date();
       const timeStr = now.toLocaleTimeString();
       setLastRefreshedAt(timeStr);
 
-      // Slightly perturb Node 1 & Node 2 sensors for realistic telemetry simulation
+      // If backend API URL is configured, trigger re-fetch of current nodes & weather
+      if (API_URL) {
+        fetch(`${API_URL}/api/nodes`)
+          .then((r) => r.json())
+          .then((d) => d.success && d.data && setNodes(d.data))
+          .catch(() => {});
+        fetch(`${API_URL}/api/weather/current`)
+          .then((r) => r.json())
+          .then((d) => d.success && d.data && setApiData(d.data))
+          .catch(() => {});
+        if (!isAuto) {
+          addToast("Data Refreshed", `System synchronized at ${timeStr}`, "success");
+        }
+        return;
+      }
+
+      // Local Fallback simulation if no backend URL is set
       setNodes((prevNodes) =>
         prevNodes.map((n) => {
           if (n.id === "node-1") {
@@ -169,7 +310,7 @@ export const AppProvider = ({ children }) => {
     [thresholds, addToast]
   );
 
-  // Live Simulation interval loop
+  // Live Simulation interval loop (fallback or sync ticker)
   useEffect(() => {
     if (!isLiveSimulating) return;
     const timer = setInterval(() => {
@@ -184,6 +325,11 @@ export const AppProvider = ({ children }) => {
       prev.map((a) => (a.id === alertId ? { ...a, status: "Acknowledged" } : a))
     );
     addToast("Alert Acknowledged", `Alert ${alertId} status updated to Acknowledged.`, "warning");
+
+    if (API_URL) {
+      fetch(`${API_URL}/api/alerts/${alertId}/acknowledge`, { method: "PATCH" })
+        .catch((err) => console.warn("Failed to sync acknowledge to backend:", err.message));
+    }
   };
 
   const resolveAlert = (alertId) => {
@@ -191,12 +337,25 @@ export const AppProvider = ({ children }) => {
       prev.map((a) => (a.id === alertId ? { ...a, status: "Resolved" } : a))
     );
     addToast("Alert Resolved", `Alert ${alertId} marked as Resolved.`, "success");
+
+    if (API_URL) {
+      fetch(`${API_URL}/api/alerts/${alertId}/resolve`, { method: "PATCH" })
+        .catch((err) => console.warn("Failed to sync resolve to backend:", err.message));
+    }
   };
 
   // Threshold update handler
   const updateThresholds = (newThresholds) => {
     setThresholds(newThresholds);
     addToast("Settings Saved", "Alert thresholds updated dynamically across all nodes.", "success");
+
+    if (API_URL) {
+      fetch(`${API_URL}/api/settings/thresholds`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newThresholds),
+      }).catch((err) => console.warn("Failed to sync thresholds to backend:", err.message));
+    }
   };
 
   // Add Incident Report
@@ -210,6 +369,20 @@ export const AppProvider = ({ children }) => {
     };
     setReports((prev) => [reportObj, ...prev]);
     addToast("Incident Reported", `New report '${reportObj.title}' logged into system.`, "info");
+
+    if (API_URL) {
+      fetch(`${API_URL}/api/reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: newReport.title,
+          location: newReport.location,
+          severity: newReport.severity,
+          reportedBy: newReport.reportedBy,
+          description: newReport.description,
+        }),
+      }).catch((err) => console.warn("Failed to sync report to backend:", err.message));
+    }
   };
 
   // Map Navigation helper
