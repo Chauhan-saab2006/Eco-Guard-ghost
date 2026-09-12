@@ -1,6 +1,5 @@
 import React from "react";
 import { useApp } from "../../context/AppContext";
-import { ApiKeyMasker } from "./ApiKeyMasker";
 import { StatusBadge } from "../common/StatusBadge";
 import { MetricCard } from "../common/MetricCard";
 import {
@@ -13,7 +12,6 @@ import {
   Eye,
   Activity,
   ArrowRight,
-  ShieldCheck,
 } from "lucide-react";
 
 export const ApiOverviewCard = ({ onViewApiHistory }) => {
@@ -35,22 +33,6 @@ export const ApiOverviewCard = ({ onViewApiHistory }) => {
           </div>
 
           <StatusBadge type="api" text={apiData.status} />
-        </div>
-
-        {/* Provider Telemetry Pill */}
-        <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 space-y-2 text-xs">
-          <div className="flex items-center justify-between text-slate-300">
-            <span className="text-slate-400 font-medium">Provider:</span>
-            <span className="font-semibold text-purple-300">{apiData.provider}</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2 text-[11px] pt-1 border-t border-slate-800/60 text-slate-400">
-            <div>Status: <span className="text-emerald-400 font-bold">200 OK</span></div>
-            <div>Latency: <span className="text-slate-200 font-mono">{apiData.latency}</span></div>
-            <div>Freshness: <span className="text-emerald-400 font-semibold">{apiData.dataFreshness}</span></div>
-          </div>
-
-          <ApiKeyMasker apiKey={apiData.apiKeyMasked} />
         </div>
       </div>
 

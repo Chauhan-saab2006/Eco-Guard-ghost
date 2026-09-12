@@ -31,7 +31,9 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
               <Radio className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-extrabold text-white tracking-tight leading-snug">
+              <h3 className={`text-base font-extrabold tracking-tight leading-snug ${
+                isNode1 ? "text-emerald-400" : "text-cyan-400"
+              }`}>
                 {node.name}
               </h3>
               {/* Both LoRa and GSM Connected badges */}

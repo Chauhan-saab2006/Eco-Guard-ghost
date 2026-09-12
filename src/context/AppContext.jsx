@@ -7,6 +7,7 @@ import { initialNodes } from "../data/mockNodes";
 import { initialMLState } from "../data/mockPredictions";
 import { initialReports } from "../data/mockReports";
 import { calculateRisk } from "../utils/riskCalculator";
+import { useFirebaseData } from "../hooks/useFirebaseData";
 
 const RAW_API_URL = import.meta.env.VITE_API_URL || "";
 export const API_URL = RAW_API_URL ? RAW_API_URL.replace(/\/$/, "") : "";
@@ -15,8 +16,26 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
     const [activePage, setActivePage] = useState("home");
+
+    // Firebase Realtime Database — live sensor data & history
+    const {
+        firebaseNodes,
+        firebaseApiData,
+        firebaseHistory,
+        isFirebaseLoading,
+    } = useFirebaseData();
+
     const [nodes, setNodes] = useState(initialNodes);
     const [apiData, setApiData] = useState(initialApiData);
+
+    // Sync Firebase live data into local state whenever it updates
+    useEffect(() => {
+        setNodes(firebaseNodes);
+    }, [firebaseNodes]);
+
+    useEffect(() => {
+        setApiData(firebaseApiData);
+    }, [firebaseApiData]);
     const [alerts, setAlerts] = useState(initialAlerts);
     const [hazards, setHazards] = useState(initialHazards);
     const [reports, setReports] = useState(initialReports);
@@ -434,6 +453,8 @@ export const AppProvider = ({ children }) => {
                 toasts,
                 addToast,
                 removeToast,
+                firebaseHistory,
+                isFirebaseLoading,
             }}
         >
             <div className={theme === "light" ? "light-theme min-h-screen" : "dark min-h-screen"}>{children}</div>

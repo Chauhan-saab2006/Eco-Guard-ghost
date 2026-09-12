@@ -10,11 +10,17 @@ import {
   Legend,
 } from "recharts";
 import { generateHistoryData } from "../../data/mockHistory";
+import { useApp } from "../../context/AppContext";
 import { LineChart as ChartIcon, Radio, CloudSun } from "lucide-react";
 
 export const SensorHistoryChart = ({ title, type = "node1" }) => {
   const [timeframe, setTimeframe] = useState("24h");
-  const { node1History, node2History, apiHistory } = generateHistoryData(timeframe);
+
+  // Try Firebase history from context; fall back to generated mock data
+  const { firebaseHistory } = useApp();
+  const mockHistory = generateHistoryData(timeframe);
+
+  const { node1History, node2History, apiHistory } = firebaseHistory || mockHistory;
 
   // Active line toggles
   const [visibleLines, setVisibleLines] = useState({
@@ -28,29 +34,29 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
     setVisibleLines((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  let data = node1History;
+  let data = node1History?.length ? node1History : mockHistory.node1History;
   let lineConfigs = [
     { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
     { key: "humidity", name: "Humidity (%)", color: "#06b6d4", paramKey: "p2" },
     { key: "soilMoisture", name: "Soil Moisture (%)", color: "#d97706", paramKey: "p3" },
-    { key: "rainfall", name: "Rainfall (mm/h)", color: "#2563eb", paramKey: "p4" },
+    { key: "rainfall", name: "MQ3 Gas (ppm)", color: "#2563eb", paramKey: "p4" },
   ];
 
   if (type === "node2") {
-    data = node2History;
+    data = node2History?.length ? node2History : mockHistory.node2History;
     lineConfigs = [
       { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
       { key: "humidity", name: "Humidity (%)", color: "#06b6d4", paramKey: "p2" },
-      { key: "pm25", name: "PM2.5 (µg/m³)", color: "#a855f7", paramKey: "p3" },
-      { key: "waterLevel", name: "Water Level (m)", color: "#10b981", paramKey: "p4" },
+      { key: "pm25", name: "MQ5 Gas (ppm)", color: "#a855f7", paramKey: "p3" },
+      { key: "waterLevel", name: "Distance (m)", color: "#10b981", paramKey: "p4" },
     ];
   } else if (type === "api") {
-    data = apiHistory;
+    data = apiHistory?.length ? apiHistory : mockHistory.apiHistory;
     lineConfigs = [
       { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
-      { key: "aqi", name: "AQI", color: "#f59e0b", paramKey: "p2" },
-      { key: "pm25", name: "PM2.5", color: "#a855f7", paramKey: "p3" },
-      { key: "rainfall", name: "Rainfall", color: "#2563eb", paramKey: "p4" },
+      { key: "aqi", name: "AQI (MQ3÷5)", color: "#f59e0b", paramKey: "p2" },
+      { key: "pm25", name: "PM2.5 (MQ5÷6)", color: "#a855f7", paramKey: "p3" },
+      { key: "rainfall", name: "MQ7 (÷10)", color: "#2563eb", paramKey: "p4" },
     ];
   }
 

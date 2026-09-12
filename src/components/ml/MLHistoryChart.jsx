@@ -10,11 +10,21 @@ import {
   Legend,
 } from "recharts";
 import { generateHistoryData } from "../../data/mockHistory";
-import { BrainCircuit, Filter } from "lucide-react";
+import { useApp } from "../../context/AppContext";
+import { BrainCircuit } from "lucide-react";
 
 export const MLHistoryChart = () => {
   const [timeframe, setTimeframe] = useState("24h");
-  const { mlRiskHistory } = generateHistoryData(timeframe);
+
+  // Try Firebase history from context; fall back to generated mock data
+  const { firebaseHistory } = useApp();
+  const mockHistory = generateHistoryData(timeframe);
+
+  // Use Firebase mlRiskHistory if available; otherwise fall back to mock
+  const mlRiskHistory =
+    firebaseHistory?.mlRiskHistory?.length
+      ? firebaseHistory.mlRiskHistory
+      : mockHistory.mlRiskHistory;
 
   return (
     <div className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
