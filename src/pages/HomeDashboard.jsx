@@ -184,10 +184,9 @@ export const HomeDashboard = () => {
           </h3>
           <span className="text-xs text-slate-400 font-mono">Live Telemetry Streams</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           <SensorHistoryChart title="Node 1 — Hill Sector" type="node1" />
           <SensorHistoryChart title="Node 2 — River Bank" type="node2" />
-          <SensorHistoryChart title="API History (Region)" type="api" />
         </div>
       </div>
 

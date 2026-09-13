@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { ApiKeyMasker } from "../components/api/ApiKeyMasker";
-import { SensorHistoryChart } from "../components/charts/SensorHistoryChart";
 import { exportToCsv } from "../utils/formatters";
 import { generateHistoryData } from "../data/mockHistory";
 import { CloudSun, Key, Download, CheckCircle2 } from "lucide-react";
@@ -86,11 +85,6 @@ export const ApiDataPage = () => {
         </div>
       </div>
 
-      {/* API Historical Charts */}
-      <div className="space-y-4">
-        <h3 className="text-base font-bold text-white tracking-tight">Regional API Environmental History</h3>
-        <SensorHistoryChart title="Region-wide API Environmental Readings" type="api" />
-      </div>
     </div>
   );
 };

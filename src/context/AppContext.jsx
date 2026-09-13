@@ -54,7 +54,7 @@ export const AppProvider = ({ children }) => {
     const [selectedHazardId, setSelectedHazardId] = useState(null);
     const [mapTarget, setMapTarget] = useState(null);
 
-    const [isLiveSimulating, setIsLiveSimulating] = useState(true);
+    const [isLiveSimulating, setIsLiveSimulating] = useState(false);
     const [refreshRateSec, setRefreshRateSec] = useState(15);
     const [lastRefreshedAt, setLastRefreshedAt] = useState(new Date().toLocaleTimeString());
 

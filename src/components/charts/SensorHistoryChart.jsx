@@ -7,12 +7,10 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
 } from "recharts";
-import { generateHistoryData } from "../../data/mockHistory";
 import { useApp } from "../../context/AppContext";
 import { isFirebaseConfigured } from "../../firebase";
-import { LineChart as ChartIcon, Radio, CloudSun } from "lucide-react";
+import { Radio, CloudSun } from "lucide-react";
 
 export const SensorHistoryChart = ({ title, type = "node1" }) => {
   const [timeframe, setTimeframe] = useState("24h");

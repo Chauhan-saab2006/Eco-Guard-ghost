@@ -27,7 +27,7 @@
  *   "Node-B" → node-2 (River Bank)
  */
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { ref, onValue, off } from "firebase/database";
 import { db, isFirebaseConfigured } from "../firebase";
 import { initialNodes } from "../data/mockNodes";
@@ -40,45 +40,42 @@ import { generateHistoryData } from "../data/mockHistory";
  * Map a raw Firebase sensorData record to the node-1 sensor shape
  * (Hill Sector: soilMoisture, rainfall-equivalent, temperature, humidity)
  */
-const mapNode1Sensors = (rec = {}, defaultNode) => {
-    const soilMoisture = rec.soilMoisture ?? defaultNode.sensors.soilMoisture.value;
-    const humidity = rec.humidity ?? defaultNode.sensors.humidity.value;
-    // imuTemperature is the real temperature reading; fall back to temperature field
-    const temperature = (rec.imuTemperature && rec.imuTemperature < 100)
-        ? parseFloat(rec.imuTemperature.toFixed(1))
-        : rec.temperature ?? defaultNode.sensors.temperature.value;
-    // MQ3 is gas sensor — use as a proxy for air quality / particulates
-    const mq3 = rec.MQ3 ?? 0;
+const extractNum = (v) => {
+    if (typeof v === 'number') return v;
+    if (v && typeof v === 'object') {
+        const potentialKeys = ['value', 'ppm', 'raw', 'mq3', 'MQ3', 'mq5', 'MQ5'];
+        for (const k of potentialKeys) {
+            if (v[k] !== undefined) return Number(v[k]);
+        }
+        // If it's an object with one key, grab its value
+        const keys = Object.keys(v);
+        if (keys.length === 1) return Number(v[keys[0]]);
+        return 0;
+    }
+    return Number(v) || 0;
+};
 
+const mapNode1Sensors = (rec = {}, defaultNode) => {
+    const source = rec.nodeA || rec;
+    const soilMoisture = extractNum(source.soilMoisture ?? defaultNode.sensors.soilMoisture.value);
+    const humidity = extractNum(source.humidity ?? defaultNode.sensors.humidity.value);
+    const temperature = (extractNum(source.imuTemperature) && extractNum(source.imuTemperature) < 100) ? parseFloat(extractNum(source.imuTemperature).toFixed(1)) : extractNum(source.temperature ?? defaultNode.sensors.temperature.value);
+    const mq3 = extractNum(source.MQ3);
     return {
         temperature: { ...defaultNode.sensors.temperature, value: temperature, status: getStatus(temperature, 10, 35) },
         humidity:    { ...defaultNode.sensors.humidity,    value: humidity,     status: getStatus(humidity, 30, 80) },
-        soilMoisture: {
-            ...defaultNode.sensors.soilMoisture,
-            value: soilMoisture,
-            status: soilMoisture > 85 ? "critical" : soilMoisture > 70 ? "warning" : "normal",
-        },
-        rainfall: {
-            ...defaultNode.sensors.rainfall,
-            value: mq3,
-            unit: "ppm",
-            status: mq3 > 1500 ? "critical" : mq3 > 800 ? "warning" : "normal",
-        },
+        soilMoisture: { ...defaultNode.sensors.soilMoisture, value: soilMoisture, status: soilMoisture > 85 ? 'critical' : soilMoisture > 70 ? 'warning' : 'normal' },
+        rainfall: { ...defaultNode.sensors.rainfall, value: mq3, unit: 'ppm', status: mq3 > 1500 ? 'critical' : mq3 > 800 ? 'warning' : 'normal' },
     };
 };
-
-/**
- * Map a raw Firebase sensorData record to the node-2 sensor shape
- * (River Bank: pm25, waterLevel, temperature, humidity)
- */
 const mapNode2Sensors = (rec = {}, defaultNode) => {
-    const humidity     = rec.humidity ?? defaultNode.sensors.humidity.value;
-    const temperature  = (rec.imuTemperature && rec.imuTemperature < 100)
-        ? parseFloat(rec.imuTemperature.toFixed(1))
-        : rec.temperature ?? defaultNode.sensors.temperature.value;
-    const mq5 = rec.MQ5 ?? 0;   // gas sensor → proxy for PM2.5
-    const distance = rec.nodeB?.waterLevel1 ?? rec.distance ?? defaultNode.sensors.waterLevel.value;
-    const soilMoisture = rec.soilMoisture ?? 0;
+    const humidity     = extractNum(rec.humidity ?? defaultNode.sensors.humidity.value);
+    const temperature  = (extractNum(rec.imuTemperature) && extractNum(rec.imuTemperature) < 100)
+        ? parseFloat(extractNum(rec.imuTemperature).toFixed(1))
+        : extractNum(rec.temperature ?? defaultNode.sensors.temperature.value);
+    const mq5 = extractNum(rec.MQ5);   // gas sensor → proxy for PM2.5
+    const distance = extractNum(rec.nodeB?.waterLevel1 ?? rec.distance ?? defaultNode.sensors.waterLevel.value);
+    const soilMoisture = extractNum(rec.soilMoisture);
 
     return {
         temperature: { ...defaultNode.sensors.temperature, value: temperature, status: getStatus(temperature, 10, 35) },
@@ -109,48 +106,46 @@ const getStatus = (val, low, high) => {
 };
 
 // Build a history point for Node-1 chart from a raw Firebase record
-const toNode1HistoryPoint = (rec, label) => ({
-    time: label,
-    temperature: (rec.imuTemperature && rec.imuTemperature < 100)
-        ? parseFloat(rec.imuTemperature.toFixed(1))
-        : rec.temperature ?? 0,
-    humidity:     rec.humidity ?? 0,
-    soilMoisture: rec.soilMoisture ?? 0,
-    rainfall:     rec.MQ3 ?? 0,   // MQ3 gas sensor as rainfall proxy line
-});
-
-// Build a history point for Node-2 chart from a raw Firebase record
+const toNode1HistoryPoint = (rec, label) => {
+    const source = rec.nodeA || rec;
+    return {
+        time: label,
+        temperature: (extractNum(source.imuTemperature) && extractNum(source.imuTemperature) < 100) ? parseFloat(extractNum(source.imuTemperature).toFixed(1)) : extractNum(source.temperature),
+        humidity: extractNum(source.humidity),
+        soilMoisture: extractNum(source.soilMoisture),
+        rainfall: extractNum(source.MQ3),
+    };
+};
 const toNode2HistoryPoint = (rec, label) => ({
     time: label,
-    temperature: (rec.imuTemperature && rec.imuTemperature < 100)
-        ? parseFloat(rec.imuTemperature.toFixed(1))
-        : rec.temperature ?? 0,
-    humidity:     rec.humidity ?? 0,
-    pm25:         rec.MQ5 ?? 0,
-    waterLevel:   rec.distance ?? 0,
-    waterLevel:   rec.nodeB?.waterLevel1 ?? rec.distance ?? 0,
+    temperature: (extractNum(rec.imuTemperature) && extractNum(rec.imuTemperature) < 100)
+        ? parseFloat(extractNum(rec.imuTemperature).toFixed(1))
+        : extractNum(rec.temperature),
+    humidity:     extractNum(rec.humidity),
+    pm25:         extractNum(rec.MQ5),
+    waterLevel:   extractNum(rec.nodeB?.waterLevel1 ?? rec.distance),
 });
 
 // Build a history point for API/ML risk chart — derived from sensor data
 const toApiHistoryPoint = (rec, label) => ({
     time: label,
-    temperature: (rec.imuTemperature && rec.imuTemperature < 100)
-        ? parseFloat(rec.imuTemperature.toFixed(1))
-        : rec.temperature ?? 0,
-    aqi:      Math.min(500, Math.round((rec.MQ3 ?? 0) / 5)),
-    pm25:     Math.min(300, Math.round((rec.MQ5 ?? 0) / 6)),
-    rainfall: Math.min(100, Math.round((rec.MQ7 ?? 0) / 10)),
-    windSpeed: rec.vibration ?? 0,
+    temperature: (extractNum(rec.imuTemperature) && extractNum(rec.imuTemperature) < 100)
+        ? parseFloat(extractNum(rec.imuTemperature).toFixed(1))
+        : extractNum(rec.temperature),
+    aqi:      Math.min(500, Math.round(extractNum(rec.MQ3) / 5)),
+    pm25:     Math.min(300, Math.round(extractNum(rec.MQ5) / 6)),
+    rainfall: Math.min(100, Math.round(extractNum(rec.MQ7) / 10)),
+    windSpeed: extractNum(rec.vibration),
     pressure:  1013,
 });
 
 // Build an ML risk history point derived from sensor readings
 const toMlHistoryPoint = (rec, label) => {
-    const soil   = rec.soilMoisture ?? 50;
-    const mq3    = rec.MQ3 ?? 0;
-    const mq5    = rec.MQ5 ?? 0;
-    const dist   = rec.distance ?? 0;
-    const vib    = rec.vibration ?? 0;
+    const soil   = extractNum(rec.soilMoisture) || 50;
+    const mq3    = extractNum(rec.MQ3);
+    const mq5    = extractNum(rec.MQ5);
+    const dist   = extractNum(rec.distance);
+    const _vib    = extractNum(rec.vibration);
 
     const landslideRisk   = Math.min(99, Math.round(soil * 0.6 + (mq3 / 30)));
     const floodRisk       = Math.min(99, Math.round(dist * 20 + (mq3 / 50)));
@@ -161,7 +156,7 @@ const toMlHistoryPoint = (rec, label) => {
 };
 
 // Format a timestamp label for chart X-axis
-const makeTimeLabel = (rec, index, total) => {
+const makeTimeLabel = (rec, index, _total) => {
     if (rec.timestamp && typeof rec.timestamp === "number") {
         const d = new Date(rec.timestamp * 1000);
         // If timestamp looks like seconds-since-epoch (> year 2000 in ms)
@@ -176,12 +171,10 @@ const makeTimeLabel = (rec, index, total) => {
 
 const getLatestRecord = (records) => {
     if (records.length === 0) return null;
-
-    return records.reduce((latest, record) => {
-        if (!latest) return record;
-        if (typeof record.timestamp !== "number" || typeof latest.timestamp !== "number") return record;
-        return record.timestamp >= latest.timestamp ? record : latest;
-    }, null);
+    // Since records are derived from Firebase push-keys which are chronologically sorted,
+    // the last record in the array is always the most recent one.
+    // We cannot rely on record.timestamp because it might be Arduino millis() which resets on restart.
+    return records[records.length - 1];
 };
 
 const getTelemetry = (latestRecord, records) => {
@@ -190,6 +183,7 @@ const getTelemetry = (latestRecord, records) => {
         return {
             sw420: Number(latestRecord.vibration ?? 0),
             ultrasonicDistanceCm: latestRecord.nodeB.waterLevel1,
+            ultrasonicDistanceCm2: latestRecord.nodeB.waterLevel2,
             waterRiseRateCm: latestRecord.nodeB.decreaseRate ?? 0,
         };
     }
@@ -203,13 +197,8 @@ const getTelemetry = (latestRecord, records) => {
     };
 
     const distance = getDistance(latestRecord);
-    const previousRecord = records
-        .filter((record) => record !== latestRecord && getDistance(record) !== null)
-        .reduce((latest, record) => {
-            if (!latest) return record;
-            if (typeof record.timestamp !== "number" || typeof latest.timestamp !== "number") return record;
-            return record.timestamp >= latest.timestamp ? record : latest;
-        }, null);
+    const filteredRecords = records.filter((record) => record !== latestRecord && getDistance(record) !== null);
+    const previousRecord = filteredRecords.length > 0 ? filteredRecords[filteredRecords.length - 1] : null;
     const previousDistance = getDistance(previousRecord);
 
     return {
@@ -237,28 +226,41 @@ export const useFirebaseData = () => {
                 const apiKey = import.meta.env.VITE_OPENWEATHER_API_KEY;
                 if (!apiKey) return;
                 
-                // Fetch for Manipur (25.1 N, 94.3 E)
-                const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=25.1&lon=94.3&appid=${apiKey}&units=metric`);
-                const data = await res.json();
+                const [weatherRes, airRes] = await Promise.all([
+                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=25.1&lon=94.3&appid=${apiKey}&units=metric`),
+                    fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=25.1&lon=94.3&appid=${apiKey}`)
+                ]);
+
+                const weatherData = await weatherRes.json();
+                const airData = await airRes.json();
                 
-                if (data && data.main) {
+                if (weatherData && weatherData.main) {
+                    let pm25Val = 0;
+                    let calculatedAqi = 0;
+                    
+                    if (airData && airData.list && airData.list[0]) {
+                        pm25Val = airData.list[0].components.pm2_5;
+                        calculatedAqi = Math.round(pm25Val * 4);
+                    }
+
                     setFirebaseApiData(prev => ({
                         ...prev,
-                        provider: "OpenWeatherMap (Manipur Region)",
+                        provider: 'OpenWeatherMap (Manipur Region)',
                         sensors: {
                             ...prev.sensors,
-                            temperature: { ...prev.sensors.temperature, value: data.main.temp },
-                            humidity: { ...prev.sensors.humidity, value: data.main.humidity },
-                            rainfall: { ...prev.sensors.rainfall, value: data.rain?.["1h"] || 0 },
-                            windSpeed: { ...prev.sensors.windSpeed, value: Math.round(data.wind.speed * 3.6) }, // convert m/s to km/h
-                            pressure: { ...prev.sensors.pressure, value: data.main.pressure },
-                            visibility: { ...prev.sensors.visibility, value: data.visibility ? parseFloat((data.visibility / 1000).toFixed(1)) : prev.sensors.visibility.value },
-                            windDirection: `${data.wind.deg}°`,
+                            temperature: { ...prev.sensors.temperature, value: weatherData.main.temp },
+                            humidity: { ...prev.sensors.humidity, value: weatherData.main.humidity },
+                            rainfall: { ...prev.sensors.rainfall, value: weatherData.rain?.['1h'] || 0 },
+                            windSpeed: { ...prev.sensors.windSpeed, value: Math.round(weatherData.wind.speed * 3.6) },
+                            pressure: { ...prev.sensors.pressure, value: weatherData.main.pressure },
+                            visibility: { ...prev.sensors.visibility, value: parseFloat((weatherData.visibility / 1000).toFixed(1)) },
+                            aqi: { ...prev.sensors.aqi, value: calculatedAqi },
+                            pm25: { ...prev.sensors.pm25, value: pm25Val },
                         }
                     }));
                 }
             } catch (err) {
-                console.error("Failed to fetch weather API", err);
+                console.error('Failed to fetch weather API', err);
             }
         };
         fetchWeather();
@@ -268,13 +270,12 @@ export const useFirebaseData = () => {
 
     useEffect(() => {
         if (!isFirebaseConfigured || !db) {
-            setIsFirebaseLoading(false);
             return;
         }
 
         const sensorRef = ref(db, "sensorData");
 
-        const unsubscribe = onValue(
+        const _unsubscribe = onValue(
             sensorRef,
             (snapshot) => {
                 const raw = snapshot.val();
@@ -344,8 +345,8 @@ export const useFirebaseData = () => {
                     sensors: {
                         ...prev.sensors,
                         // We rely on the OpenWeather API for Weather data, so we only pull local gas sensing here
-                        aqi:         { ...prev.sensors.aqi,         value: Math.min(500, Math.round(((latestA?.MQ3 || latestB?.MQ3 || 0)) / 5)) },
-                        pm25:        { ...prev.sensors.pm25,        value: Math.min(300, Math.round(((latestA?.MQ5 || latestB?.MQ5 || 0)) / 6)) },
+                        aqi:         { ...prev.sensors.aqi,         value: Math.min(500, Math.round((extractNum(latestA?.MQ3) || extractNum(latestB?.MQ3) || 0) / 5)) },
+                        pm25:        { ...prev.sensors.pm25,        value: Math.min(300, Math.round((extractNum(latestA?.MQ5) || extractNum(latestB?.MQ5) || 0) / 6)) },
                     },
                 }));
 

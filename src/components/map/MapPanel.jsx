@@ -40,22 +40,18 @@ const MapController = ({ target }) => {
 export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
   const { nodes, apiData, hazards, selectedNodeId, mapTarget, setSelectedNodeId, setSelectedHazardId } = useApp();
 
-  const [mapTile, setMapTile] = useState("dark"); // dark | satellite | street
+  const [mapTile, setMapTile] = useState("satellite"); // satellite
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   const defaultCenter = [25.268, 91.738];
   const defaultZoom = 13;
 
   const tileUrls = {
-    dark: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}",
     satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    street: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   };
 
   const tileAttributions = {
-    dark: "&copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community",
     satellite: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community",
-    street: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   };
 
   const node1 = nodes.find((n) => n.id === "node-1") || nodes[0];
@@ -73,30 +69,12 @@ export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
         <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button
             type="button"
-            onClick={() => setMapTile("dark")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              mapTile === "dark" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Dark
-          </button>
-          <button
-            type="button"
             onClick={() => setMapTile("satellite")}
             className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
               mapTile === "satellite" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-white"
             }`}
           >
             Satellite
-          </button>
-          <button
-            type="button"
-            onClick={() => setMapTile("street")}
-            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-              mapTile === "street" ? "bg-emerald-600 text-white shadow-md" : "text-slate-400 hover:text-white"
-            }`}
-          >
-            Terrain
           </button>
         </div>
 
@@ -120,9 +98,6 @@ export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
         className="w-full h-full z-0"
       >
         <TileLayer key={mapTile} url={tileUrls[mapTile]} attribution={tileAttributions[mapTile]} />
-        {mapTile === "dark" && (
-          <TileLayer key="dark-reference" url="https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}" />
-        )}
         <MapController target={mapTarget} />
 
         {/* Hazard Zone Polygons */}

@@ -17,6 +17,7 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
 
   const sw420 = node2?.telemetry?.sw420 ?? 0;
   const ultrasonicDistanceCm = node2?.telemetry?.ultrasonicDistanceCm;
+  const ultrasonicDistanceCm2 = node2?.telemetry?.ultrasonicDistanceCm2;
   const waterRiseRateCm = node2?.telemetry?.waterRiseRateCm ?? 0;
   const ultrasonicRising = waterRiseRateCm > 0;
   const ultrasonicCritical = typeof ultrasonicDistanceCm === "number" && ultrasonicDistanceCm <= 30;
@@ -50,9 +51,9 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
       details: `Soil ${node2?.sensors?.soilMoisture?.value ?? "--"}% | SW-420 ${sw420} | Water rise ${waterRiseRateCm} cm/s | Ultrasonic ${ultrasonicDistanceCm ?? "--"} cm`,
     },
     flood: {
-      active: waterRiseRateCm >= 2 && ultrasonicDistanceCm <= 35,
-      title: "Flood Event",
-      details: `Water rise ${waterRiseRateCm} cm/s | Ultrasonic ${ultrasonicDistanceCm ?? "--"} cm`,
+      active: ultrasonicDistanceCm <= 35,
+      title: "Flood Alert",
+      details: `Distance (waterlevel1): ${ultrasonicDistanceCm ?? "--"} cm`,
     },
     airQuality: {
       active: pm25 >= 20 && pm25 <= 25,
@@ -64,6 +65,11 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
       title: "Critical Soil Moisture",
       details: `Soil moisture reached critical level: ${node2?.sensors?.soilMoisture?.value ?? "--"}%`,
     },
+    rainAlert: {
+      active: waterRiseRateCm >= 2,
+      title: "Rain Alert",
+      details: `Ultrasonic sensor (2) decrease rate: ${waterRiseRateCm} cm/s`,
+    },
   };
 
   const landslideScore = events.landslide.active 
@@ -72,14 +78,19 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
       ? Math.max(85, baseLandslideScore) 
       : baseLandslideScore;
       
-  const floodScore = events.flood.active ? Math.max(85, baseFloodScore) : baseFloodScore;
+  const floodScore = events.flood.active 
+    ? Math.max(85, baseFloodScore) 
+    : events.rainAlert.active
+      ? Math.max(79, baseFloodScore)
+      : baseFloodScore;
+
   const airQualityScore = events.airQuality.active ? Math.max(60, baseAirQualityScore) : baseAirQualityScore;
 
   // Combined Overall Risk score (base average)
   let overallScore = Math.round(landslideScore * 0.45 + floodScore * 0.35 + airQualityScore * 0.2);
 
   // If any physical event is actively triggered, the overall score should escalate to match
-  if (events.landslide.active || events.flood.active || events.airQuality.active || events.highSoilMoisture.active) {
+  if (events.landslide.active || events.flood.active || events.airQuality.active || events.highSoilMoisture.active || events.rainAlert.active) {
     overallScore = Math.max(overallScore, landslideScore, floodScore, airQualityScore);
   }
 
@@ -99,7 +110,7 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
 };
 
 export const getRiskLevel = (score) => {
-  if (score >= 80) return "CRITICAL";
+  if (score >= 79) return "CRITICAL";
   if (score >= 65) return "HIGH";
   if (score >= 45) return "MODERATE";
   return "LOW";
@@ -132,7 +143,12 @@ export const getPredictionExplanation = (category, riskLevel, nodes, apiData) =>
     return `Soil moisture at Node 1 is currently ${soil}% with a rainfall intensity of ${rain} mm/h. High pore water pressure combined with steep slope gradients in Zone A creates elevated risk of slumping.`;
   }
   if (category === "Flood") {
-    return `River gauge at Node 2 registers water level at ${water} m. Upstream precipitation monitored via API feed indicates gradual accumulation near river embankments.`;
+    const riseRate = node2?.telemetry?.waterRiseRateCm ?? 0;
+    let extra = "";
+    if (riseRate >= 2) {
+      extra = ` A critical water rise rate of ${riseRate} cm/s has been detected.`;
+    }
+    return `River gauge at Node 2 registers water level at ${water} m.${extra} Upstream precipitation monitored via API feed indicates gradual accumulation near river embankments.`;
   }
   if (category === "AirQuality") {
     return `Node 2 particulate sensor reports PM2.5 at ${pm25} µg/m³. Low wind vector is inhibiting atmospheric dispersion across River Bank basin.`;

@@ -68,6 +68,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="°C"
                 min={0}
                 max={50}
+                safeRange={node.sensors.temperature.safeRange}
                 status={node.sensors.temperature.status}
               />
               <SensorGauge
@@ -76,6 +77,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="%"
                 min={0}
                 max={100}
+                safeRange={node.sensors.humidity.safeRange}
                 status={node.sensors.humidity.status}
               />
               <SensorGauge
@@ -84,6 +86,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="%"
                 min={0}
                 max={100}
+                safeRange={node.sensors.soilMoisture.safeRange}
                 warningThreshold={70}
                 criticalThreshold={85}
                 status={node.sensors.soilMoisture.status}
@@ -94,6 +97,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="mm/h"
                 min={0}
                 max={100}
+                safeRange={node.sensors.rainfall.safeRange}
                 warningThreshold={25}
                 criticalThreshold={40}
                 status={node.sensors.rainfall.status}
@@ -107,6 +111,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="°C"
                 min={0}
                 max={50}
+                safeRange={node.sensors.temperature.safeRange}
                 status={node.sensors.temperature.status}
               />
               <SensorGauge
@@ -115,6 +120,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="%"
                 min={0}
                 max={100}
+                safeRange={node.sensors.humidity.safeRange}
                 status={node.sensors.humidity.status}
               />
               <SensorGauge
@@ -123,6 +129,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="µg/m³"
                 min={0}
                 max={250}
+                safeRange={node.sensors.pm25.safeRange}
                 warningThreshold={50}
                 criticalThreshold={100}
                 status={node.sensors.pm25.status}
@@ -133,6 +140,7 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 unit="m"
                 min={0}
                 max={5}
+                safeRange={node.sensors.waterLevel.safeRange}
                 warningThreshold={1.5}
                 criticalThreshold={2.5}
                 status={node.sensors.waterLevel.status}

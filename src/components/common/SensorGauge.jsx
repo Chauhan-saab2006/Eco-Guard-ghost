@@ -8,22 +8,45 @@ export const SensorGauge = ({
   max = 100,
   warningThreshold,
   criticalThreshold,
+  safeRange,
   status = "normal", // normal | warning | critical
 }) => {
   const numericVal = Number(value) || 0;
-  const percentage = Math.min(100, Math.max(0, ((numericVal - min) / (max - min)) * 100));
-  
+  const rangeMin = Array.isArray(safeRange) ? safeRange[0] : min;
+  const rangeMax = Array.isArray(safeRange) ? safeRange[1] : max;
+  const effectiveMin = Math.min(rangeMin, rangeMax);
+  const effectiveMax = Math.max(rangeMin, rangeMax);
+  const rangeSpan = Math.max(effectiveMax - effectiveMin, 1);
+  const percentage = Math.min(100, Math.max(0, ((numericVal - effectiveMin) / rangeSpan) * 100));
+
   // Arc math: 0 to 180 degrees arc length = Math.PI * radius = Math.PI * 36 = ~113.1
   const radius = 36;
   const circumference = Math.PI * radius;
   const strokeDashoffset = circumference - (circumference * percentage) / 100;
 
-  let strokeColor = "#10b981"; // Normal: Emerald
-  if (status === "warning" || numericVal >= (warningThreshold || max * 0.7)) {
-    strokeColor = "#f59e0b"; // Warning: Amber
+  const lowerBoundary = Array.isArray(safeRange) ? safeRange[0] : min;
+  const upperBoundary = Array.isArray(safeRange) ? safeRange[1] : max;
+  const warningLimit = typeof warningThreshold === "number" ? warningThreshold : upperBoundary;
+  const criticalLimit = typeof criticalThreshold === "number" ? criticalThreshold : upperBoundary;
+
+  let strokeColor = "#10b981";
+
+  if (status === "warning" || numericVal >= warningLimit || numericVal <= lowerBoundary) {
+    strokeColor = "#f59e0b";
   }
-  if (status === "critical" || numericVal >= (criticalThreshold || max * 0.85)) {
-    strokeColor = "#ef4444"; // Critical: Red
+  if (status === "critical" || numericVal > criticalLimit || numericVal < lowerBoundary * 0.85) {
+    strokeColor = "#ef4444";
+  }
+
+  if (Array.isArray(safeRange)) {
+    const isInsideSafeRange = numericVal >= lowerBoundary && numericVal <= upperBoundary;
+    if (isInsideSafeRange) {
+      strokeColor = "#10b981";
+    } else if (numericVal > upperBoundary) {
+      strokeColor = numericVal >= criticalLimit || numericVal >= upperBoundary * 1.15 ? "#ef4444" : "#f59e0b";
+    } else if (numericVal < lowerBoundary) {
+      strokeColor = numericVal <= lowerBoundary * 0.85 ? "#ef4444" : "#f59e0b";
+    }
   }
 
   return (

@@ -4,9 +4,7 @@ import {
   LayoutDashboard,
   Radio,
   BrainCircuit,
-  CloudSun,
   LineChart,
-  BellRing,
   FileText,
   ShieldAlert,
   Settings,
@@ -17,18 +15,14 @@ import {
 } from "lucide-react";
 
 export const Sidebar = () => {
-  const { activePage, setActivePage, alerts, lastRefreshedAt, computedRisk } = useApp();
+  const { activePage, setActivePage, lastRefreshedAt, computedRisk } = useApp();
   const [collapsed, setCollapsed] = useState(false);
-
-  const activeAlertCount = alerts.filter((a) => a.status === "Active").length;
 
   const navItems = [
     { id: "home", label: "Home", icon: LayoutDashboard },
     { id: "nodes", label: "Nodes", icon: Radio },
     { id: "ml-predictions", label: "ML Predictions", icon: BrainCircuit },
-    { id: "api-data", label: "API Data", icon: CloudSun },
     { id: "analytics", label: "Analytics", icon: LineChart },
-    { id: "alerts", label: "Alerts", icon: BellRing, badge: activeAlertCount },
     { id: "reports", label: "Reports", icon: FileText },
     { id: "hazards", label: "Hazard Zones", icon: ShieldAlert },
     { id: "settings", label: "Settings", icon: Settings },

@@ -102,65 +102,7 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
         </div>
       </div>
 
-      {/* Sensor event evaluation */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {detectedEvents.map((event) => (
-          <div
-            key={event.title}
-            className={`p-3 rounded-2xl border ${event.active
-              ? "bg-red-500/15 border-red-500/50"
-              : "bg-slate-950/60 border-slate-800"}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-bold text-slate-200">{event.title}</span>
-              <span className={`text-[10px] font-bold ${event.active ? "text-red-400" : "text-emerald-400"}`}>
-                {event.active ? "DETECTED" : "CLEAR"}
-              </span>
-            </div>
-            <p className="mt-1 text-[11px] text-slate-400">{event.details}</p>
-          </div>
-        ))}
-      </div>
 
-      {/* Central Visual Data Flow Pipeline */}
-      <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800 overflow-x-auto">
-        <div className="flex items-center justify-between min-w-[600px] text-xs font-semibold text-slate-300 px-2 py-1">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-emerald-400">
-            <Radio className="w-3.5 h-3.5" />
-            <span>Node 1 (LoRa)</span>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-cyan-400">
-            <Radio className="w-3.5 h-3.5" />
-            <span>Node 2 (GSM)</span>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-purple-400">
-            <CloudSun className="w-3.5 h-3.5" />
-            <span>API Weather</span>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-blue-400">
-            <History className="w-3.5 h-3.5" />
-            <span>24h Trends</span>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold shadow-md">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>ML Model</span>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-600 shrink-0" />
-
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/40 text-red-400 font-bold">
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>Risk Score</span>
-          </div>
-        </div>
-      </div>
 
       {/* Main Prediction Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -211,58 +153,6 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
         </div>
       </div>
 
-      {/* Dynamic Explanation Section */}
-      <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
-        <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs">
-          <Info className="w-4 h-4" />
-          <span>Why is the ML Model predicting this?</span>
-        </div>
-        <p className="text-xs text-slate-300 leading-relaxed font-sans pl-6">
-          "{dynamicExplanation}"
-        </p>
-      </div>
-
-      {/* Recommended Action Footer */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-950 to-slate-900 border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <span className="text-[10px] text-emerald-400 uppercase font-bold tracking-wider block">
-            Recommended Operational Action
-          </span>
-          <h4 className="text-sm font-bold text-white flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            Issue Early Warning & Alert Field Patrol
-          </h4>
-          <ul className="text-xs text-slate-400 space-y-0.5 pl-5 list-disc">
-            {activeCategoryData.recommendedActions.slice(0, 3).map((act, i) => (
-              <li key={i}>{act}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            onClick={() => {
-              if (onViewAlertModal) onViewAlertModal();
-              else setActivePage("alerts");
-            }}
-            className="px-4 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/40 font-semibold text-xs transition-colors flex items-center gap-1.5"
-          >
-            <BellRing className="w-4 h-4" />
-            <span>View Active Alert</span>
-          </button>
-
-          <button
-            onClick={() => {
-              if (onCreateReportModal) onCreateReportModal();
-              else setActivePage("reports");
-            }}
-            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs transition-colors shadow-lg flex items-center gap-1.5"
-          >
-            <FilePlus className="w-4 h-4" />
-            <span>Create Incident Report</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 };
