@@ -29,6 +29,8 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
     alerts,
   } = useApp();
 
+  const detectedEvents = Object.values(computedRisk.events || {});
+
   const activeCategoryData =
     currentMLPrediction.predictions[mlCategory] || currentMLPrediction.predictions.Overall;
 
@@ -98,6 +100,26 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
             );
           })}
         </div>
+      </div>
+
+      {/* Sensor event evaluation */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {detectedEvents.map((event) => (
+          <div
+            key={event.title}
+            className={`p-3 rounded-2xl border ${event.active
+              ? "bg-red-500/15 border-red-500/50"
+              : "bg-slate-950/60 border-slate-800"}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-bold text-slate-200">{event.title}</span>
+              <span className={`text-[10px] font-bold ${event.active ? "text-red-400" : "text-emerald-400"}`}>
+                {event.active ? "DETECTED" : "CLEAR"}
+              </span>
+            </div>
+            <p className="mt-1 text-[11px] text-slate-400">{event.details}</p>
+          </div>
+        ))}
       </div>
 
       {/* Central Visual Data Flow Pipeline */}

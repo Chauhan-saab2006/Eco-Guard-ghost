@@ -40,7 +40,19 @@ function calculateRisk(node1Sensors, node2Sensors, apiSensors, thresholds) {
     const airQualityScore = Math.min(99, Math.round((pm25Ratio * 60 + aqiRatio * 40) * 0.65));
 
     // Combined overall
-    const overallScore = Math.min(99, Math.round(landslideScore * 0.45 + floodScore * 0.35 + airQualityScore * 0.2));
+    let overallScore = Math.round(landslideScore * 0.45 + floodScore * 0.35 + airQualityScore * 0.2);
+    // Mimic the event active logic from the frontend to keep backend scores somewhat in sync
+    if (landslideScore >= 90 || floodScore >= 85 || airQualityScore >= 60) {
+        overallScore = Math.max(overallScore, landslideScore, floodScore, airQualityScore);
+    }
+
+    // Custom condition: when soil moisture > 70, add 15 to ML prediction
+    const node2Soil = node2Sensors?.soilMoisture ?? 0;
+    if (node2Soil > 70) {
+        overallScore += 15;
+    }
+
+    overallScore = Math.min(99, overallScore);
 
     return {
         overallScore,

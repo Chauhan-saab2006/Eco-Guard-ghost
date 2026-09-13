@@ -11,17 +11,16 @@ import {
 } from "recharts";
 import { generateHistoryData } from "../../data/mockHistory";
 import { useApp } from "../../context/AppContext";
+import { isFirebaseConfigured } from "../../firebase";
 import { LineChart as ChartIcon, Radio, CloudSun } from "lucide-react";
 
 export const SensorHistoryChart = ({ title, type = "node1" }) => {
   const [timeframe, setTimeframe] = useState("24h");
 
   // Try Firebase history from context; fall back to generated mock data
-  const { firebaseHistory } = useApp();
-  const mockHistory = generateHistoryData(timeframe);
-
-  const { node1History, node2History, apiHistory } = firebaseHistory || mockHistory;
-
+  const { firebaseHistory, isFirebaseLoading, nodes, apiData } = useApp();
+  // We no longer use mockHistory for fallbacks
+  
   // Active line toggles
   const [visibleLines, setVisibleLines] = useState({
     p1: true,
@@ -34,7 +33,40 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
     setVisibleLines((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  let data = node1History?.length ? node1History : mockHistory.node1History;
+  const historyLimit = { "1h": 12, "6h": 36, "24h": 144, "7d": 1008 }[timeframe];
+  
+  const selectLatest = (history, nodeType) => {
+    if (!history?.length) {
+      // If there is no data of that node, fetch the last known data of that node (from app state)
+      if (nodeType === "api") {
+        return [
+          { time: "-5m", temperature: apiData.sensors.temperature.value, aqi: apiData.sensors.aqi.value, pm25: 15, rainfall: 0 },
+          { time: "Latest", temperature: apiData.sensors.temperature.value, aqi: apiData.sensors.aqi.value, pm25: 15, rainfall: 0 }
+        ];
+      }
+      
+      const node = nodes.find(n => n.id === (nodeType === "node1" ? "node-1" : "node-2"));
+      if (!node) return [];
+      
+      const pt = {
+        time: "Latest",
+        temperature: node.sensors.temperature.value,
+        humidity: node.sensors.humidity.value,
+        soilMoisture: node.sensors.soilMoisture?.value ?? 0,
+        rainfall: node.sensors.rainfall?.value ?? 0,
+        pm25: node.sensors.pm25?.value ?? 0,
+        waterLevel: node.sensors.waterLevel?.value ?? 0
+      };
+      
+      // Return 2 points so the LineChart can draw a flat line
+      return [{ ...pt, time: "-5m" }, pt];
+    }
+
+    return history.slice(-historyLimit);
+  };
+
+  const { node1History, node2History, apiHistory } = firebaseHistory || {};
+  let data = selectLatest(node1History, "node1");
   let lineConfigs = [
     { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
     { key: "humidity", name: "Humidity (%)", color: "#06b6d4", paramKey: "p2" },
@@ -43,7 +75,7 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
   ];
 
   if (type === "node2") {
-    data = node2History?.length ? node2History : mockHistory.node2History;
+    data = selectLatest(node2History, "node2");
     lineConfigs = [
       { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
       { key: "humidity", name: "Humidity (%)", color: "#06b6d4", paramKey: "p2" },
@@ -51,7 +83,7 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
       { key: "waterLevel", name: "Distance (m)", color: "#10b981", paramKey: "p4" },
     ];
   } else if (type === "api") {
-    data = apiHistory?.length ? apiHistory : mockHistory.apiHistory;
+    data = selectLatest(apiHistory, "api");
     lineConfigs = [
       { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
       { key: "aqi", name: "AQI (MQ3÷5)", color: "#f59e0b", paramKey: "p2" },
@@ -113,36 +145,46 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
 
       {/* Recharts Area */}
       <div className="h-48 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-            <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} />
-            <YAxis stroke="#64748b" fontSize={10} tickLine={false} />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: "#0f172a",
-                borderColor: "#334155",
-                borderRadius: "10px",
-                fontSize: "11px",
-                color: "#f8fafc",
-              }}
-            />
-            {lineConfigs.map(
-              (cfg) =>
-                visibleLines[cfg.paramKey] && (
-                  <Line
-                    key={cfg.key}
-                    type="monotone"
-                    dataKey={cfg.key}
-                    name={cfg.name}
-                    stroke={cfg.color}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                )
-            )}
-          </LineChart>
-        </ResponsiveContainer>
+        {isFirebaseLoading && isFirebaseConfigured ? (
+          <div className="h-full flex items-center justify-center text-xs text-slate-500">
+            Loading Firebase sensor history...
+          </div>
+        ) : data.length === 0 ? (
+          <div className="h-full flex items-center justify-center text-xs text-slate-500">
+            No Firebase sensor readings available.
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={data} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+              <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} />
+              <YAxis stroke="#64748b" fontSize={10} tickLine={false} />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#0f172a",
+                  borderColor: "#334155",
+                  borderRadius: "10px",
+                  fontSize: "11px",
+                  color: "#f8fafc",
+                }}
+              />
+              {lineConfigs.map(
+                (cfg) =>
+                  visibleLines[cfg.paramKey] && (
+                    <Line
+                      key={cfg.key}
+                      type="monotone"
+                      dataKey={cfg.key}
+                      name={cfg.name}
+                      stroke={cfg.color}
+                      strokeWidth={2}
+                      dot={false}
+                    />
+                  )
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React from "react";
 import { useApp } from "../../context/AppContext";
+import { ApiKeyMasker } from "./ApiKeyMasker";
 import { StatusBadge } from "../common/StatusBadge";
 import { MetricCard } from "../common/MetricCard";
 import {
@@ -12,6 +13,7 @@ import {
   Eye,
   Activity,
   ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 
 export const ApiOverviewCard = ({ onViewApiHistory }) => {
@@ -34,6 +36,8 @@ export const ApiOverviewCard = ({ onViewApiHistory }) => {
 
           <StatusBadge type="api" text={apiData.status} />
         </div>
+
+
       </div>
 
       {/* Environmental Metric Cards Grid */}
