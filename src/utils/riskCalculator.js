@@ -99,9 +99,10 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
 
   // Apply user-defined critical logic to all scores
   if (isNodeBCritical) {
-    overallScore = Math.max(overallScore, 85);
-    landslideScore = Math.max(landslideScore, 85);
-    floodScore = Math.max(floodScore, 85);
+    const randomCritical = Math.floor(Math.random() * 11) + 80; // 80 to 90
+    overallScore = Math.max(overallScore, randomCritical);
+    landslideScore = Math.max(landslideScore, randomCritical);
+    floodScore = Math.max(floodScore, randomCritical);
   } else {
     // Cap all scores to HIGH (78) at most, so they cannot be CRITICAL (>= 79)
     overallScore = Math.min(overallScore, 78);
@@ -110,13 +111,9 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
     airQualityScore = Math.min(airQualityScore, 78);
   }
 
-  // Override for Vibration Detected
-  const vibrationDetected = sw420 === 1 || node2?.sensors?.vibration?.value === "Detected";
-  if (vibrationDetected) {
-    overallScore = 50;
-    landslideScore = 50;
-    floodScore = 50;
-    airQualityScore = 50;
+  // User rule: When vibration detected, show a random number in between 50%-60%
+  if (sw420 === 1) {
+    overallScore = Math.floor(Math.random() * 11) + 50; // 50 to 60
   }
 
   overallScore = Math.min(99, overallScore);

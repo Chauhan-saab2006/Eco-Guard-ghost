@@ -11,11 +11,10 @@ import {
   Gauge,
   Eye,
   Activity,
-  ArrowRight,
 } from "lucide-react";
 
-export const ApiOverviewCard = ({ onViewApiHistory }) => {
-  const { apiData, setActivePage } = useApp();
+export const ApiOverviewCard = () => {
+  const { apiData } = useApp();
 
   return (
     <div className="p-5 rounded-3xl bg-slate-900/90 border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300 shadow-xl space-y-4">
@@ -88,19 +87,6 @@ export const ApiOverviewCard = ({ onViewApiHistory }) => {
         </div>
       </div>
 
-      {/* Button Action */}
-      <div className="pt-2">
-        <button
-          onClick={() => {
-            if (onViewApiHistory) onViewApiHistory();
-            else setActivePage("api-data");
-          }}
-          className="w-full py-2.5 px-4 rounded-2xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 font-semibold text-xs transition-colors flex items-center justify-center gap-2"
-        >
-          <span>View API History & Data Diagnostics</span>
-          <ArrowRight className="w-4 h-4" />
-        </button>
-      </div>
     </div>
   );
 };

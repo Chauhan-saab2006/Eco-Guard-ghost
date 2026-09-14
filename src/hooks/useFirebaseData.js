@@ -317,8 +317,8 @@ export const useFirebaseData = () => {
                 setFirebaseNodes([updatedNode1, updatedNode2]);
 
                 // ---- History arrays for charts ----
-                // Limit to last 24 points so charts don't get too crowded
-                const limitHistory = (arr) => arr.slice(-24);
+                // Keep the latest 50 Firebase records for trend charts.
+                const limitHistory = (arr) => arr.slice(-50);
 
                 const node1History = limitHistory(
                     nodeARecords.map((rec, i, arr) => toNode1HistoryPoint(rec, makeTimeLabel(rec, i, arr.length)))

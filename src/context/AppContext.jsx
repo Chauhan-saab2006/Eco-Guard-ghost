@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
 import { initialAlerts } from "../data/mockAlerts";
 import { initialApiData } from "../data/mockApiData";
@@ -212,6 +212,39 @@ export const AppProvider = ({ children }) => {
 
     // Compute live ML prediction state based on active nodes, api data, & thresholds
     const computedRisk = calculateRisk(nodes, apiData, thresholds);
+
+    const prevEventsRef = useRef({});
+    
+    useEffect(() => {
+        const events = computedRisk.events || {};
+        
+        // Check for newly active events
+        Object.keys(events).forEach(key => {
+            const isNowActive = events[key].active;
+            const wasActive = prevEventsRef.current[key]?.active;
+            
+            if (isNowActive && !wasActive) {
+                let severity = "warning";
+                if (key === "landslide" || key === "flood") severity = "error";
+                
+                addToast(events[key].title || "Alert", events[key].details || "New event detected", severity);
+            }
+        });
+        
+        // Check for vibration specifically
+        const node2 = nodes.find(n => n.id === "node-2");
+        const isVibNow = node2?.telemetry?.sw420 === 1 || node2?.sensors?.vibration?.value === "Detected";
+        const wasVib = prevEventsRef.current['vibrationAlert'];
+        
+        if (isVibNow && !wasVib) {
+            addToast("Vibration Alert", "Vibration detected on River Bank node.", "warning");
+        }
+        
+        prevEventsRef.current = {
+            ...events,
+            vibrationAlert: isVibNow
+        };
+    }, [computedRisk.events, nodes, addToast]);
 
     // Dynamic ML Prediction object
     const currentMLPrediction = {

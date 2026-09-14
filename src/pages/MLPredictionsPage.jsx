@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useApp } from "../context/AppContext";
 import { MLPredictionCenter } from "../components/ml/MLPredictionCenter";
-import { MLHistoryChart } from "../components/ml/MLHistoryChart";
 import { calculateRisk } from "../utils/riskCalculator";
 import { BrainCircuit, Sliders, RefreshCw } from "lucide-react";
 
@@ -176,8 +175,6 @@ export const MLPredictionsPage = () => {
         </div>
       </div>
 
-      {/* History Chart */}
-      <MLHistoryChart />
     </div>
   );
 };

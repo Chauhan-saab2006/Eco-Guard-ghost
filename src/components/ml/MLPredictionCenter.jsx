@@ -1,7 +1,7 @@
 import React from "react";
 import { useApp } from "../../context/AppContext";
 import { RiskIndicator } from "./RiskIndicator";
-import { ModelInputBar } from "./ModelInputBar";
+import { MLHistoryChart } from "./MLHistoryChart";
 import { getPredictionExplanation } from "../../utils/riskCalculator";
 import {
   BrainCircuit,
@@ -55,6 +55,18 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
     nodes,
     apiData
   );
+
+  let predictedHazardText = activeCategoryData.hazard;
+  const isRainAlert = computedRisk.events?.rainAlert?.active;
+  const isVibrationAlert = nodes.find(n => n.id === "node-2")?.telemetry?.sw420 === 1 || nodes.find(n => n.id === "node-2")?.sensors?.vibration?.value === "Detected";
+
+  if (isRainAlert && isVibrationAlert) {
+    predictedHazardText = "Rain & Vibration Alert";
+  } else if (isRainAlert) {
+    predictedHazardText = "Rain Alert";
+  } else if (isVibrationAlert) {
+    predictedHazardText = "Vibration Alert";
+  }
 
   return (
     <div className="p-6 rounded-3xl bg-slate-900/90 border border-emerald-500/40 shadow-2xl space-y-6">
@@ -110,38 +122,17 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
         <div className="lg:col-span-4 space-y-4">
           <RiskIndicator score={currentScore} level={currentLevel} />
 
-          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2 text-xs">
-            <div className="flex justify-between text-slate-400">
-              <span>Predicted Hazard:</span>
-              <span className="text-white font-bold">{activeCategoryData.hazard}</span>
-            </div>
-            <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800">
-              <span>Model Version:</span>
-              <span className="text-slate-300 font-mono">{currentMLPrediction.modelVersion}</span>
-            </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Last Inferenced:</span>
-              <span className="text-slate-300 font-mono">{currentMLPrediction.lastPredictionTime}</span>
+          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-2 text-sm">
+            <div className="flex justify-between items-center text-slate-400">
+              <span className="font-medium">Predicted Hazard:</span>
+              <span className="text-white font-bold text-right text-base">{predictedHazardText}</span>
             </div>
           </div>
         </div>
 
-        {/* Right: Model Input Parameters & Influence */}
+        {/* Right: Firebase ML risk history */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-              <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
-                Model Input Parameters & Feature Influence
-              </h4>
-              <span className="text-[10px] text-slate-500 font-mono">Normalized Feature Weights</span>
-            </div>
-
-            <div className="space-y-2.5">
-              {activeCategoryData.inputInfluences.map((input, idx) => (
-                <ModelInputBar key={idx} {...input} />
-              ))}
-            </div>
-          </div>
+          <MLHistoryChart />
         </div>
       </div>
 

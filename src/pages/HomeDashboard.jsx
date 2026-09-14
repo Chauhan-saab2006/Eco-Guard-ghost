@@ -10,7 +10,6 @@ import { NodeDetailModal } from "../components/nodes/NodeDetailModal";
 import { NodeHistoryModal } from "../components/nodes/NodeHistoryModal";
 import { ApiOverviewCard } from "../components/api/ApiOverviewCard";
 import { MLPredictionCenter } from "../components/ml/MLPredictionCenter";
-import { MLHistoryChart } from "../components/ml/MLHistoryChart";
 import { SensorHistoryChart } from "../components/charts/SensorHistoryChart";
 import { Modal } from "../components/common/Modal";
 import { FilePlus, ShieldAlert, Radio, CloudSun, Activity } from "lucide-react";
@@ -172,9 +171,6 @@ export const HomeDashboard = () => {
         <ReportedSections />
         <HazardZones />
       </div>
-
-      {/* SECTION 5: ML Risk Prediction Trajectory History Chart (Full Width) */}
-      <MLHistoryChart />
 
       {/* SECTION 5: Environmental Sensor Histories (Full Width 3-Column Grid) */}
       <div id="sensor-history-section" className="space-y-4">
