@@ -3,6 +3,39 @@ import { useApp } from "../context/AppContext";
 import { exportToCsv } from "../utils/formatters";
 import { FileText, Download, Printer } from "lucide-react";
 
+const disasterImages = [
+  {
+    src: "/images/disasters/000_48PV2C8-1748767385.webp",
+    title: "Flooded roadway",
+    description: "Standing water affecting local road access.",
+  },
+  {
+    src: "/images/disasters/commuters-wade-through-floodwaters-after-heavy-monsoon-rains-in-kolkata-india-on-september-24.webp",
+    title: "Floodwater crossing",
+    description: "Residents navigating floodwater after heavy rainfall.",
+  },
+  {
+    src: "/images/disasters/family-walking-in-flowing-water-in-a-stream-in-rains.webp",
+    title: "Rapid water flow",
+    description: "Flowing water recorded near an affected settlement.",
+  },
+  {
+    src: "/images/disasters/Flood-damage-on-NH6-in-Megahlya-India-East-Jaintia-Hills-Police-343x187.webp",
+    title: "Road damage",
+    description: "Flood damage reported along a major road route.",
+  },
+  {
+    src: "/images/disasters/flooded-india-flood-victims-moving-to-evacuation-center-heavy-rains-cause-irregular-flood-uttar-pradesh-33407829.webp",
+    title: "Evacuation activity",
+    description: "Flood-affected residents moving toward assistance.",
+  },
+  {
+    src: "/images/disasters/new-delhi-india-a-view-of-a-flood-water-logged-street-near-salimgarh-fort-back-side-of-red.webp",
+    title: "Waterlogged street",
+    description: "Urban street conditions during a flood event.",
+  },
+];
+
 export const ReportsPage = () => {
   const { alerts, reports, hazards, computedRisk, addToast } = useApp();
 
@@ -96,6 +129,31 @@ export const ReportsPage = () => {
         <div className="p-4 rounded-2xl bg-slate-900/90 border border-purple-500/30">
           <span className="text-[10px] text-purple-300 font-bold uppercase block">Avg Risk Score</span>
           <span className="text-xl font-black text-purple-400">{avgScore} / 100</span>
+        </div>
+      </div>
+
+      {/* Disaster Evidence Gallery */}
+      <div className="p-5 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4 shadow-xl">
+        <div>
+          <h3 className="text-base font-bold text-white tracking-tight">Disaster Evidence Gallery</h3>
+          <p className="text-xs text-slate-400 mt-1">Visual field references from recent flood and access incidents.</p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {disasterImages.map((image) => (
+            <figure key={image.src} className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60">
+              <img
+                src={image.src}
+                alt={image.title}
+                className="w-full h-40 object-cover"
+                loading="lazy"
+              />
+              <figcaption className="p-3">
+                <h4 className="text-sm font-bold text-white">{image.title}</h4>
+                <p className="text-[11px] text-slate-400 mt-1">{image.description}</p>
+              </figcaption>
+            </figure>
+          ))}
         </div>
       </div>
 
