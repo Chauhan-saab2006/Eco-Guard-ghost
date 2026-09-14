@@ -46,8 +46,7 @@ export const initialNodes = [
       temperature: { value: 22.1, unit: "°C", safeRange: [10, 35], status: "normal" },
       humidity: { value: 71, unit: "%", safeRange: [30, 80], status: "normal" },
       pm25: { value: 82, unit: "µg/m³", safeRange: [0, 50], status: "warning" },
-      waterLevel: { value: 1.8, unit: "m", safeRange: [0, 1.5], status: "warning" },
-      waterLevel: { value: 1.8, unit: "m", safeRange: [0, 3.5], status: "normal" },
+      vibration: { value: "Not Detected", unit: "", safeRange: ["Not Detected"], status: "normal" },
     },
   },
 ];

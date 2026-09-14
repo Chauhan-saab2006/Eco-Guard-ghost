@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, Polygon, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, Polygon, Polyline, CircleMarker, Circle, useMap } from "react-leaflet";
 import { useApp } from "../../context/AppContext";
 import { createNodeIcon } from "../../utils/leafletIcons";
 import { MapLegend } from "./MapLegend";
@@ -57,6 +57,19 @@ export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
   const node1 = nodes.find((n) => n.id === "node-1") || nodes[0];
   const node2 = nodes.find((n) => n.id === "node-2") || nodes[1];
 
+  const generateSubNodes = (centerLat, centerLng, count, radius) => {
+    return Array.from({ length: count }).map((_, i) => {
+      const angle = (i * 2 * Math.PI) / count;
+      return [
+        centerLat + radius * Math.cos(angle),
+        centerLng + radius * Math.sin(angle),
+      ];
+    });
+  };
+
+  const node1SubNodes = node1 ? generateSubNodes(node1.lat, node1.lng, 5, 0.005) : [];
+  const node2SubNodes = node2 ? generateSubNodes(node2.lat, node2.lng, 5, 0.005) : [];
+
   return (
     <div
       className={`relative w-full rounded-3xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl transition-all duration-300 ${
@@ -100,42 +113,51 @@ export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
         <TileLayer key={mapTile} url={tileUrls[mapTile]} attribution={tileAttributions[mapTile]} />
         <MapController target={mapTarget} />
 
-        {/* Hazard Zone Polygons */}
-        {hazards.map((hz) => (
-          <Polygon
-            key={hz.id}
-            positions={hz.coordinates}
-            pathOptions={{
-              color: hz.color,
-              fillColor: hz.color,
-              fillOpacity: 0.25,
-              weight: 2,
-              dashArray: "4, 6",
-            }}
-            eventHandlers={{
-              click: () => {
-                setSelectedHazardId(hz.id);
-                if (onSelectHazard) onSelectHazard(hz);
-              },
-            }}
-          >
-            <Popup>
-              <div className="p-2 space-y-1.5 text-xs text-slate-200">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-1">
-                  <span className="font-bold text-white flex items-center gap-1">
-                    <ShieldAlert className="w-3.5 h-3.5 text-red-400" />
-                    {hz.name}
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] font-bold">
-                    {hz.riskLevel}
-                  </span>
-                </div>
-                <p className="text-slate-300 text-[11px]">{hz.description}</p>
-                <p className="text-[10px] text-slate-400">Vulnerability: {hz.vulnerabilityScore}</p>
-              </div>
-            </Popup>
-          </Polygon>
-        ))}
+        {/* Node 1 Sub-nodes and connections */}
+        {node1 && (
+          <React.Fragment>
+            <Circle
+              center={[node1.lat, node1.lng]}
+              radius={650}
+              pathOptions={{ color: "#34d399", fillColor: "#064e3b", fillOpacity: 0.15, weight: 2, dashArray: "4, 6" }}
+            />
+            {node1SubNodes.map((pos, i) => (
+              <React.Fragment key={`n1-sub-${i}`}>
+                <Polyline
+                  positions={[[node1.lat, node1.lng], pos]}
+                  pathOptions={{ color: "#059669", weight: 3, dashArray: "4, 4", opacity: 1 }}
+                />
+                <Marker
+                  position={pos}
+                  icon={createNodeIcon(`Node 1 Sub-${i + 1}`, "emerald", false, `N${i + 1}`)}
+                />
+              </React.Fragment>
+            ))}
+          </React.Fragment>
+        )}
+
+        {/* Node 2 Sub-nodes and connections */}
+        {node2 && (
+          <React.Fragment>
+            <Circle
+              center={[node2.lat, node2.lng]}
+              radius={650}
+              pathOptions={{ color: "#22d3ee", fillColor: "#164e63", fillOpacity: 0.15, weight: 2, dashArray: "4, 6" }}
+            />
+            {node2SubNodes.map((pos, i) => (
+              <React.Fragment key={`n2-sub-${i}`}>
+                <Polyline
+                  positions={[[node2.lat, node2.lng], pos]}
+                  pathOptions={{ color: "#0284c7", weight: 3, dashArray: "4, 4", opacity: 1 }}
+                />
+                <Marker
+                  position={pos}
+                  icon={createNodeIcon(`Node 2 Sub-${i + 1}`, "cyan", false, `N${i + 1}`)}
+                />
+              </React.Fragment>
+            ))}
+          </React.Fragment>
+        )}
 
         {/* Node 1 Marker */}
         {node1 && (
@@ -210,7 +232,7 @@ export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
                   <div>Battery: <span className="font-semibold text-white">{node2.battery}%</span></div>
                   <div>Temp: <span className="font-semibold text-white">{node2.sensors.temperature.value} °C</span></div>
                   <div>PM2.5: <span className="font-semibold text-amber-400">{node2.sensors.pm25.value} µg/m³</span></div>
-                  <div>Water Level: <span className="font-semibold text-amber-400">{node2.sensors.waterLevel.value} m</span></div>
+                  <div>Vibration: <span className="font-semibold text-amber-400">{node2.sensors.vibration?.value}</span></div>
                   <div>Humidity: <span className="font-semibold text-white">{node2.sensors.humidity.value} %</span></div>
                 </div>
 
@@ -225,36 +247,7 @@ export const MapPanel = ({ onSelectNode, onSelectHazard }) => {
           </Marker>
         )}
 
-        {/* Overall Area API Marker */}
-        {apiData && (
-          <Marker
-            position={[apiData.lat, apiData.lng]}
-            icon={createNodeIcon("Overall API Area", "purple", false)}
-          >
-            <Popup>
-              <div className="p-2.5 space-y-2 text-xs text-slate-100 min-w-[210px]">
-                <div className="flex items-center justify-between border-b border-slate-700 pb-1.5">
-                  <span className="font-bold text-white flex items-center gap-1.5">
-                    <CloudSun className="w-4 h-4 text-purple-400" />
-                    Overall Area — API Data
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold text-[10px]">
-                    API Connected
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-300">
-                  <div>Temp: <span className="font-semibold text-white">{apiData.sensors.temperature.value} °C</span></div>
-                  <div>AQI: <span className="font-semibold text-amber-400">{apiData.sensors.aqi.value}</span></div>
-                  <div>PM2.5: <span className="font-semibold text-white">{apiData.sensors.pm25.value} µg/m³</span></div>
-                  <div>Rainfall: <span className="font-semibold text-white">{apiData.sensors.rainfall.value} mm/h</span></div>
-                  <div>Wind: <span className="font-semibold text-white">{apiData.sensors.windSpeed.value} km/h</span></div>
-                  <div>Pressure: <span className="font-semibold text-white">{apiData.sensors.pressure.value} hPa</span></div>
-                </div>
-              </div>
-            </Popup>
-          </Marker>
-        )}
       </MapContainer>
 
       {/* Overlay Legend */}

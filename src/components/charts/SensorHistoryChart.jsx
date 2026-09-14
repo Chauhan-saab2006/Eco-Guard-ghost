@@ -53,7 +53,7 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
         soilMoisture: node.sensors.soilMoisture?.value ?? 0,
         rainfall: node.sensors.rainfall?.value ?? 0,
         pm25: node.sensors.pm25?.value ?? 0,
-        waterLevel: node.sensors.waterLevel?.value ?? 0
+        vibration: node.sensors.vibration?.value === "Detected" ? 1 : 0
       };
       
       // Return 2 points so the LineChart can draw a flat line
@@ -78,7 +78,7 @@ export const SensorHistoryChart = ({ title, type = "node1" }) => {
       { key: "temperature", name: "Temp (°C)", color: "#ef4444", paramKey: "p1" },
       { key: "humidity", name: "Humidity (%)", color: "#06b6d4", paramKey: "p2" },
       { key: "pm25", name: "MQ5 Gas (ppm)", color: "#a855f7", paramKey: "p3" },
-      { key: "waterLevel", name: "Distance (m)", color: "#10b981", paramKey: "p4" },
+      { key: "vibration", name: "Vibration (0/1)", color: "#10b981", paramKey: "p4" },
     ];
   } else if (type === "api") {
     data = selectLatest(apiHistory, "api");

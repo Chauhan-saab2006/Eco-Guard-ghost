@@ -135,17 +135,14 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 status={node.sensors.pm25.status}
               />
               <SensorGauge
-                title="Water Level"
-                value={node.sensors.waterLevel.value}
-                unit="m"
+                title="Vibration"
+                value={node.sensors.vibration?.value}
+                unit=""
                 min={0}
-                max={5}
-                safeRange={node.sensors.waterLevel.safeRange}
-                warningThreshold={1.5}
-                criticalThreshold={2.5}
-                warningThreshold={3.5}
-                criticalThreshold={4.5}
-                status={node.sensors.waterLevel.status}
+                max={1}
+                safeRange={["Not Detected"]}
+                status={node.sensors.vibration?.status}
+                isText={true}
               />
             </>
           )}

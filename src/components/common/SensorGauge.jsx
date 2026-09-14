@@ -10,8 +10,9 @@ export const SensorGauge = ({
   criticalThreshold,
   safeRange,
   status = "normal", // normal | warning | critical
+  isText = false,
 }) => {
-  const numericVal = Number(value) || 0;
+  const numericVal = isText ? (status === 'critical' || status === 'warning' ? max : min) : (Number(value) || 0);
   const rangeMin = Array.isArray(safeRange) ? safeRange[0] : min;
   const rangeMax = Array.isArray(safeRange) ? safeRange[1] : max;
   const effectiveMin = Math.min(rangeMin, rangeMax);
@@ -78,13 +79,21 @@ export const SensorGauge = ({
         </svg>
 
         {/* Center Text Overlay */}
-        <div className="absolute bottom-0 flex flex-col items-center justify-center leading-none text-center">
-          <span className="text-sm sm:text-base font-black text-white tracking-tight">
-            {numericVal}
-          </span>
-          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-            {unit}
-          </span>
+        <div className="absolute bottom-0 flex flex-col items-center justify-center leading-none text-center w-full">
+          {isText ? (
+            <span className={`text-[10px] sm:text-xs font-black tracking-tight leading-tight px-1 ${status === 'critical' ? 'text-red-400' : 'text-emerald-400'}`}>
+              {value}
+            </span>
+          ) : (
+            <>
+              <span className="text-sm sm:text-base font-black text-white tracking-tight">
+                {numericVal}
+              </span>
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                {unit}
+              </span>
+            </>
+          )}
         </div>
       </div>
 

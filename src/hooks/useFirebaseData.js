@@ -91,13 +91,11 @@ const mapNode2Sensors = (rec = {}, defaultNode) => {
             unit: "ppm",
             status: mq5 > 1500 ? "critical" : mq5 > 800 ? "warning" : "normal",
         },
-        waterLevel: {
-            ...defaultNode.sensors.waterLevel,
-            value: typeof distance === "number" ? parseFloat(distance.toFixed(2)) : defaultNode.sensors.waterLevel.value,
-            unit: "cm",
-            status: distance <= 35 ? "critical" : distance <= 50 ? "warning" : "normal",
-            unit: "m",
-            status: distance >= 4.5 ? "critical" : distance >= 3.5 ? "warning" : "normal",
+        vibration: {
+            ...defaultNode.sensors.vibration,
+            value: extractNum(rec.vibration) === 1 ? "Detected" : "Not Detected",
+            unit: "",
+            status: extractNum(rec.vibration) === 1 ? "critical" : "normal",
         },
     };
 };
@@ -125,7 +123,7 @@ const toNode2HistoryPoint = (rec, label) => ({
         : extractNum(rec.temperature),
     humidity:     extractNum(rec.humidity),
     pm25:         extractNum(rec.MQ5),
-    waterLevel:   extractNum(rec.nodeB?.waterLevel1 ?? rec.distance),
+    vibration:    extractNum(rec.vibration) === 1 ? 1 : 0,
 });
 
 // Build a history point for API/ML risk chart — derived from sensor data

@@ -1,9 +1,9 @@
 import L from "leaflet";
 
-export const createNodeIcon = (label, colorClass = "emerald", isSelected = false) => {
-  const isNode1 = label.includes("Node 1");
-  const isNode2 = label.includes("Node 2");
-  const isApi = label.includes("API");
+export const createNodeIcon = (label, colorClass = "emerald", isSelected = false, shortLabel = null) => {
+  const isNode1 = label.includes("Node 1") || colorClass === "emerald";
+  const isNode2 = label.includes("Node 2") || colorClass === "cyan";
+  const isApi = label.includes("API") || colorClass === "purple";
 
   let mainColor = "#10b981"; // Emerald
   let bgGradient = "linear-gradient(135deg, #10b981, #059669)";
@@ -18,6 +18,8 @@ export const createNodeIcon = (label, colorClass = "emerald", isSelected = false
 
   const borderStyle = isSelected ? "3px solid #ffffff" : "2px solid rgba(255, 255, 255, 0.7)";
   const scale = isSelected ? "transform: scale(1.15);" : "";
+  
+  const displayShortLabel = shortLabel ? shortLabel : (label.includes("Node 1") ? "N1" : label.includes("Node 2") ? "N2" : "API");
 
   const html = `
     <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer; ${scale}">
@@ -35,7 +37,7 @@ export const createNodeIcon = (label, colorClass = "emerald", isSelected = false
         font-weight: bold;
         font-size: 13px;
       ">
-        ${isNode1 ? "N1" : isNode2 ? "N2" : "API"}
+        ${displayShortLabel}
       </div>
       <div style="
         background: rgba(15, 23, 42, 0.9);
@@ -61,3 +63,4 @@ export const createNodeIcon = (label, colorClass = "emerald", isSelected = false
     iconAnchor: [20, 20],
   });
 };
+

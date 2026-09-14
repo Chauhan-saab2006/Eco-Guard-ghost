@@ -115,14 +115,6 @@ export const MLPredictionCenter = ({ onViewAlertModal, onCreateReportModal }) =>
               <span>Predicted Hazard:</span>
               <span className="text-white font-bold">{activeCategoryData.hazard}</span>
             </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Model Confidence:</span>
-              <span className="text-emerald-400 font-bold">{activeCategoryData.confidence}</span>
-            </div>
-            <div className="flex justify-between text-slate-400">
-              <span>Prediction Horizon:</span>
-              <span className="text-cyan-300 font-semibold">{activeCategoryData.horizon}</span>
-            </div>
             <div className="flex justify-between text-slate-400 pt-1 border-t border-slate-800">
               <span>Model Version:</span>
               <span className="text-slate-300 font-mono">{currentMLPrediction.modelVersion}</span>

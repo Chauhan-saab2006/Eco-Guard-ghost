@@ -66,35 +66,63 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
       details: `Soil moisture reached critical level: ${node2?.sensors?.soilMoisture?.value ?? "--"}%`,
     },
     rainAlert: {
-      active: waterRiseRateCm >= 2,
+      active: typeof ultrasonicDistanceCm === "number" && ultrasonicDistanceCm <= 35,
       title: "Rain Alert",
-      details: `Ultrasonic sensor (2) decrease rate: ${waterRiseRateCm} cm/s`,
+      details: `Ultrasonic sensor distance is ${ultrasonicDistanceCm ?? "--"} cm`,
     },
   };
 
-  const landslideScore = events.landslide.active 
+  let landslideScore = events.landslide.active 
     ? Math.max(90, baseLandslideScore) 
-    : events.highSoilMoisture.active 
-      ? Math.max(85, baseLandslideScore) 
-      : baseLandslideScore;
+    : baseLandslideScore;
       
-  const floodScore = events.flood.active 
+  let floodScore = events.flood.active 
     ? Math.max(85, baseFloodScore) 
     : events.rainAlert.active
       ? Math.max(79, baseFloodScore)
       : baseFloodScore;
 
-  const airQualityScore = events.airQuality.active ? Math.max(60, baseAirQualityScore) : baseAirQualityScore;
+  let airQualityScore = events.airQuality.active ? Math.max(60, baseAirQualityScore) : baseAirQualityScore;
 
-  // Combined Overall Risk score (base average)
+  // Custom Node-B Critical Alert Logic
+  const isNodeBCritical = (
+    waterRiseRateCm >= 2 ||
+    (typeof ultrasonicDistanceCm === "number" && ultrasonicDistanceCm <= 35)
+  );
+
   let overallScore = Math.round(landslideScore * 0.45 + floodScore * 0.35 + airQualityScore * 0.2);
 
   // If any physical event is actively triggered, the overall score should escalate to match
-  if (events.landslide.active || events.flood.active || events.airQuality.active || events.highSoilMoisture.active || events.rainAlert.active) {
+  if (events.landslide.active || events.flood.active || events.airQuality.active || events.rainAlert.active) {
     overallScore = Math.max(overallScore, landslideScore, floodScore, airQualityScore);
   }
 
+  // Apply user-defined critical logic to all scores
+  if (isNodeBCritical) {
+    overallScore = Math.max(overallScore, 85);
+    landslideScore = Math.max(landslideScore, 85);
+    floodScore = Math.max(floodScore, 85);
+  } else {
+    // Cap all scores to HIGH (78) at most, so they cannot be CRITICAL (>= 79)
+    overallScore = Math.min(overallScore, 78);
+    landslideScore = Math.min(landslideScore, 78);
+    floodScore = Math.min(floodScore, 78);
+    airQualityScore = Math.min(airQualityScore, 78);
+  }
+
+  // Override for Vibration Detected
+  const vibrationDetected = sw420 === 1 || node2?.sensors?.vibration?.value === "Detected";
+  if (vibrationDetected) {
+    overallScore = 50;
+    landslideScore = 50;
+    floodScore = 50;
+    airQualityScore = 50;
+  }
+
   overallScore = Math.min(99, overallScore);
+  landslideScore = Math.min(99, landslideScore);
+  floodScore = Math.min(99, floodScore);
+  airQualityScore = Math.min(99, airQualityScore);
 
   return {
     overallScore,
