@@ -96,6 +96,8 @@ const mapNode2Sensors = (rec = {}, defaultNode) => {
             value: typeof distance === "number" ? parseFloat(distance.toFixed(2)) : defaultNode.sensors.waterLevel.value,
             unit: "cm",
             status: distance <= 35 ? "critical" : distance <= 50 ? "warning" : "normal",
+            unit: "m",
+            status: distance >= 4.5 ? "critical" : distance >= 3.5 ? "warning" : "normal",
         },
     };
 };

@@ -143,6 +143,8 @@ export const NodeCard = ({ node, isSelected, onViewDetails, onViewHistory }) => 
                 safeRange={node.sensors.waterLevel.safeRange}
                 warningThreshold={1.5}
                 criticalThreshold={2.5}
+                warningThreshold={3.5}
+                criticalThreshold={4.5}
                 status={node.sensors.waterLevel.status}
               />
             </>
