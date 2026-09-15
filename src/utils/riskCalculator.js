@@ -60,6 +60,7 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
       title: "Air Quality Event",
       details: `Air quality value ${pm25} (target range 20-25)`,
     },
+
     rainAlert: {
       active: typeof ultrasonicDistanceCm === "number" && ultrasonicDistanceCm <= 35,
       title: "Rain Alert",
