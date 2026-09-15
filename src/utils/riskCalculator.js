@@ -60,11 +60,6 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
       title: "Air Quality Event",
       details: `Air quality value ${pm25} (target range 20-25)`,
     },
-    highSoilMoisture: {
-      active: (node2?.sensors?.soilMoisture?.value ?? 0) > 70,
-      title: "Critical Soil Moisture",
-      details: `Soil moisture reached critical level: ${node2?.sensors?.soilMoisture?.value ?? "--"}%`,
-    },
     rainAlert: {
       active: typeof ultrasonicDistanceCm === "number" && ultrasonicDistanceCm <= 35,
       title: "Rain Alert",
@@ -99,6 +94,9 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
 
   // Apply user-defined critical logic to all scores
   if (isNodeBCritical) {
+    overallScore = Math.max(overallScore, 85);
+    landslideScore = Math.max(landslideScore, 85);
+    floodScore = Math.max(floodScore, 85);
     const randomCritical = Math.floor(Math.random() * 11) + 80; // 80 to 90
     overallScore = Math.max(overallScore, randomCritical);
     landslideScore = Math.max(landslideScore, randomCritical);
@@ -111,8 +109,10 @@ export const calculateRisk = (nodes, apiData, thresholds) => {
     airQualityScore = Math.min(airQualityScore, 78);
   }
 
+  // User rule: When vibration detected, show 53% moderate risk
   // User rule: When vibration detected, show a random number in between 50%-60%
   if (sw420 === 1) {
+    overallScore = 53;
     overallScore = Math.floor(Math.random() * 11) + 50; // 50 to 60
   }
 

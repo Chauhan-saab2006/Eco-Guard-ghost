@@ -12,16 +12,24 @@ export const ToastContainer = () => {
       {toasts.map((toast) => {
         let Icon = Info;
         let border = "border-blue-500/40 bg-slate-900/95 text-blue-300";
+        let titleColor = "text-blue-100";
+        let messageColor = "text-blue-200/80";
 
         if (toast.type === "success") {
           Icon = CheckCircle2;
           border = "border-emerald-500/50 bg-slate-900/95 text-emerald-300";
+          titleColor = "text-emerald-400";
+          messageColor = "text-emerald-200/80";
         } else if (toast.type === "warning") {
           Icon = AlertTriangle;
           border = "border-amber-500/50 bg-slate-900/95 text-amber-300";
+          titleColor = "text-amber-400";
+          messageColor = "text-amber-200/80";
         } else if (toast.type === "error") {
           Icon = AlertTriangle;
           border = "border-red-500/50 bg-slate-900/95 text-red-300";
+          titleColor = "text-red-400";
+          messageColor = "text-red-200/80";
         }
 
         return (
@@ -31,8 +39,8 @@ export const ToastContainer = () => {
           >
             <Icon className="w-5 h-5 shrink-0 mt-0.5" />
             <div className="flex-1 space-y-0.5">
-              <p className="text-xs font-bold text-white">{toast.title}</p>
-              <p className="text-xs text-slate-300 leading-snug">{toast.message}</p>
+              <p className={`text-xs font-bold ${titleColor}`}>{toast.title}</p>
+              <p className={`text-xs leading-snug ${messageColor}`}>{toast.message}</p>
             </div>
             <button
               onClick={() => removeToast(toast.id)}

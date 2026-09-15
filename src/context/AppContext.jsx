@@ -224,8 +224,7 @@ export const AppProvider = ({ children }) => {
             const wasActive = prevEventsRef.current[key]?.active;
             
             if (isNowActive && !wasActive) {
-                let severity = "warning";
-                if (key === "landslide" || key === "flood") severity = "error";
+                let severity = "error"; // Default all ML alerts to red (error)
                 
                 addToast(events[key].title || "Alert", events[key].details || "New event detected", severity);
             }
@@ -237,7 +236,7 @@ export const AppProvider = ({ children }) => {
         const wasVib = prevEventsRef.current['vibrationAlert'];
         
         if (isVibNow && !wasVib) {
-            addToast("Vibration Alert", "Vibration detected on River Bank node.", "warning");
+            addToast("Vibration Alert", "Vibration detected on River Bank node.", "error");
         }
         
         prevEventsRef.current = {
